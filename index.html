@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kho Đề & Thi Thử Vật Lí THPT - Chinh Phục Điểm 10</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ================================================= */
+        /* CSS CHUNG */
+        /* ================================================= */
+        :root {
+            --primary-color: #3498db; /* Xanh dương chủ đạo */
+            --secondary-color: #2980b9; /* Xanh dương đậm hơn */
+            --background-light: #ecf0f1; /* Nền nhạt */
+            --text-dark: #2c3e50; /* Chữ đậm */
+            --border-color: #bdc3c7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--primary-color);
+        }
+
+        a:hover {
+            color: var(--secondary-color);
+        }
+
+        /* ================================================= */
+        /* HEADER VÀ THANH ĐIỀU HƯỚNG */
+        /* ================================================= */
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .nav-links a {
+            color: white;
+            margin-left: 25px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #ecf0f1;
+        }
+
+        /* ================================================= */
+        /* CONTAINER CHÍNH (NỘI DUNG VÀ SIDEBAR) */
+        /* ================================================= */
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* ================================================= */
+        /* SIDEBAR (THANH BÊN) */
+        /* ================================================= */
+        .sidebar {
+            width: 300px;
+            margin-right: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            height: fit-content; /* Giữ sidebar không dài hơn nội dung */
+            position: sticky;
+            top: 80px; /* Cố định sidebar dưới thanh header */
+        }
+
+        .sidebar h3 {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+            font-size: 18px;
+        }
+
+        .filter-list li {
+            list-style: none;
+            margin-bottom: 8px;
+        }
+        
+        .filter-list a {
+            display: block;
+            padding: 5px 0;
+            color: var(--text-dark);
+            transition: color 0.3s;
+        }
+        
+        .filter-list a:hover {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        /* ================================================= */
+        /* NỘI DUNG CHÍNH (DANH SÁCH ĐỀ THI) */
+        /* ================================================= */
+        .main-content {
+            flex-grow: 1;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+            display: flex;
+        }
+
+        .search-bar input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px 0 0 5px;
+            font-size: 16px;
+        }
+
+        .search-bar button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .search-bar button:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .main-content h2 {
+            font-size: 26px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            border-bottom: 3px solid var(--primary-color);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        /* ================================================= */
+        /* BẢNG ĐỀ THI */
+        /* ================================================= */
+        .test-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .test-table th, .test-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .test-table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .test-table tr:hover {
+            background-color: #f8f8f8;
+        }
+
+        .download-btn {
+            background-color: #2ecc71; /* Màu xanh lá cho nút Tải xuống */
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+        
+        .download-btn:hover {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        /* ================================================= */
+        /* FOOTER (CHÂN TRANG) */
+        /* ================================================= */
+        footer {
+            background-color: var(--text-dark);
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 30px;
+        }
+
+        footer p {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav>
+            <div class="logo">
+                <h1><i class="fas fa-atom"></i> VẬT LÍ THPT</h1>
+            </div>
+            <div class="nav-links">
+                <a href="#"><i class="fas fa-home"></i> Trang Chủ</a>
+                <a href="#"><i class="fas fa-book-open"></i> Thi Thử Online</a>
+                <a href="#"><i class="fas fa-medal"></i> Xếp Hạng</a>
+                <a href="#"><i class="fas fa-envelope"></i> Liên Hệ</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        
+        <aside class="sidebar">
+            <h3><i class="fas fa-filter"></i> Lọc Theo Tiêu Chí</h3>
+            
+            <section class="filter-section">
+                <h3>Khối Lớp</h3>
+                <ul class="filter-list">
+                    <li><a href="#">Khối 12 (Thi Tốt Nghiệp)</a></li>
+                    <li><a href="#">Khối 11</a></li>
+                    <li><a href="#">Khối 10</a></li>
+                </ul>
+            </section>
+
+            <section class="filter-section">
+                <h3>Chủ Đề</h3>
+                <ul class="filter-list">
+                    <li><a href="#">Dao Động Cơ</a></li>
+                    <li><a href="#">Sóng Cơ & Sóng Âm</a></li>
+                    <li><a href="#">Điện Xoay Chiều</a></li>
+                    <li><a href="#">Lượng Tử Ánh Sáng</a></li>
+                    <li><a href="#">Vật Lí Hạt Nhân</a></li>
+                </ul>
+            </section>
+            
+            <section class="filter-section">
+                <h3>Năm Học</h3>
+                <ul class="filter-list">
+                    <li><a href="#">Năm 2024</a></li>
+                    <li><a href="#">Năm 2023</a></li>
+                    <li><a href="#">Năm 2022</a></li>
+                </ul>
+            </section>
+        </aside>
+
+        <main class="main-content">
+            
+            <div class="search-bar">
+                <input type="text" placeholder="Tìm kiếm theo tên đề, mã đề, hoặc trường...">
+                <button><i class="fas fa-search"></i> Tìm Kiếm</button>
+            </div>
+            
+            <h2><i class="fas fa-scroll"></i> KHO ĐỀ THI TỐT NGHIỆP THPT</h2>
+            
+            <table class="test-table">
+                <thead>
+                    <tr>
+                        <th>Mã Đề</th>
+                        <th>Tên Đề Thi</th>
+                        <th>Số Câu</th>
+                        <th>Năm</th>
+                        <th>Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>VL-2401</td>
+                        <td>Đề Thi Thử Tốt Nghiệp THPT - Trường A</td>
+                        <td>40</td>
+                        <td>2024</td>
+                        <td><a href="#" class="download-btn"><i class="fas fa-download"></i> Tải Xuống</a></td>
+                    </tr>
+                    <tr>
+                        <td>VL-2305</td>
+                        <td>Đề Thi Học Kì 2 - Sở Giáo Dục Hà Nội</td>
+                        <td>40</td>
+                        <td>2023</td>
+                        <td><a href="#" class="download-btn"><i class="fas fa-download"></i> Tải Xuống</a></td>
+                    </tr>
+                    <tr>
+                        <td>VL-2402</td>
+                        <td>Chuyên đề Sóng Cơ - Lần 1</td>
+                        <td>30</td>
+                        <td>2024</td>
+                        <td><a href="#" class="download-btn"><i class="fas fa-download"></i> Tải Xuống</a></td>
+                    </tr>
+                    <tr>
+                        <td>VL-2208</td>
+                        <td>Tổng ôn Vật Lý 12 - Bộ GD&ĐT (Bản gốc)</td>
+                        <td>40</td>
+                        <td>2022</td>
+                        <td><a href="#" class="download-btn"><i class="fas fa-download"></i> Tải Xuống</a></td>
+                    </tr>
+                    </tbody>
+            </table>
+            
+        </main>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Kho Đề Vật Lí THPT. Thiết kế bởi Gemini AI. | Email: contact@vatlythpt.vn</p>
+    </footer>
+
+</body>
+</html>
