@@ -1,0 +1,259 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+
+// Single-file React prototype for "Vật Lí THPT — Website luyện thi".
+// - Tailwind CSS assumed available in project.
+// - This file is meant as a starting, previewable component (default export).
+// - It contains UI for: chọn lớp (10/11/12), chọn đề (nhiều nguồn), thi thử (3 phần), kết quả, và tích hợp AI (placeholder API calls).
+// - Backend responsibilities (not implemented here):
+//   • store/serve đề thi từ Bộ GD & các trường (DB: Postgres / Mongo)
+//   • APIs: /api/exams, /api/submit, /api/ai/explain
+//   • authentication & admin uploader for quét/nhập đề
+// - Database sketch (example):
+//   TABLE exams (id, source, grade, year, title, metadata, questions JSON)
+//   question schema: { id, type: 'mcq'|'tf'|'short', text, options?, answer, explanation }
+// - Legal & quality note: cần xin phép hoặc chỉ nhập các đề có quyền công khai; với đề từ các trường, tốt nhất là hợp tác chính thức.
+
+// ---------- Mock data (demo) ----------
+const SAMPLE_EXAMS = [
+  {
+    id: 'demo-1',
+    title: 'Đề thi mẫu Vật Lí 12 - Đề 1',
+    grade: 12,
+    source: 'Demo',
+    questions: [
+      { id: 'q1', type: 'mcq', text: 'Một vật chạy thẳng với vận tốc v = 10 m/s. Quãng đường đi được trong 3s là?', options: ['20 m','30 m','10 m','40 m'], answer: 1 },
+      { id: 'q2', type: 'tf', text: 'Trục Z là hướng dương khi lên trên.', answer: true },
+      { id: 'q3', type: 'short', text: 'Viết công thức tính động năng và giải thích các biến.' , answer: 'W = 1/2 m v^2' }
+    ]
+  }
+];
+
+// ---------- Helper components ----------
+function Badge({ children }){
+  return <span className="px-2 py-1 bg-slate-100 rounded-full text-sm">{children}</span>
+}
+
+function QuestionMCQ({ q, onChange, value }){
+  return (
+    <div className="p-4 rounded-lg border">
+      <div className="font-medium mb-2">{q.text}</div>
+      <div className="grid gap-2">
+        {q.options.map((opt, i) => (
+          <label key={i} className="flex items-center gap-2">
+            <input type="radio" name={q.id} checked={value === i} onChange={()=>onChange(i)} />
+            <span>{opt}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function QuestionTF({ q, onChange, value }){
+  return (
+    <div className="p-4 rounded-lg border">
+      <div className="font-medium mb-2">{q.text}</div>
+      <div className="flex gap-4">
+        <label className="flex items-center gap-2"><input type="radio" checked={value===true} onChange={()=>onChange(true)} /> Đúng</label>
+        <label className="flex items-center gap-2"><input type="radio" checked={value===false} onChange={()=>onChange(false)} /> Sai</label>
+      </div>
+    </div>
+  )
+}
+
+function QuestionShort({ q, onChange, value }){
+  return (
+    <div className="p-4 rounded-lg border">
+      <div className="font-medium mb-2">{q.text}</div>
+      <textarea className="w-full p-2 border rounded" rows={4} value={value||''} onChange={e=>onChange(e.target.value)} />
+      <div className="text-sm mt-2 text-gray-500">(Ghi đáp án ngắn — chấm thủ công hoặc AI hỗ trợ)</div>
+    </div>
+  )
+}
+
+// ---------- Main App ----------
+export default function PhysicsExamApp(){
+  const [grade, setGrade] = useState(12);
+  const [exams, setExams] = useState(SAMPLE_EXAMS);
+  const [selectedExamId, setSelectedExamId] = useState(SAMPLE_EXAMS[0].id);
+  const [stage, setStage] = useState('browse'); // browse | taking | review
+  const [answers, setAnswers] = useState({});
+  const [results, setResults] = useState(null);
+  const [aiBusy, setAiBusy] = useState(false);
+
+  const selectedExam = exams.find(e=>e.id===selectedExamId);
+
+  useEffect(()=>{
+    // In real app: fetch exams from backend by grade
+    // fetch(`/api/exams?grade=${grade}`).then(r=>r.json()).then(setExams)
+  },[grade]);
+
+  function startExam(){
+    setAnswers({});
+    setResults(null);
+    setStage('taking');
+  }
+
+  function setAnswer(qid, val){
+    setAnswers(prev=>({...prev, [qid]: val}));
+  }
+
+  async function submitExam(){
+    // Local auto-scoring for MCQ & TF; short answers will be sent to AI or left for manual grading.
+    const seat = selectedExam.questions;
+    let score = 0; let total = 0; let shortQs = [];
+    for(const q of seat){
+      total += 1;
+      const user = answers[q.id];
+      if(q.type === 'mcq'){
+        if(user === q.answer) score += 1;
+      } else if(q.type === 'tf'){
+        if(!!user === !!q.answer) score += 1;
+      } else if(q.type === 'short'){
+        shortQs.push({ q, user });
+      }
+    }
+
+    // If there are short answers, call AI endpoint to get suggested marks/explanations.
+    let aiFeedback = null;
+    if(shortQs.length){
+      setAiBusy(true);
+      try{
+        // Placeholder: call your backend which proxies to OpenAI or local LLM
+        // Example request body: { items: [{question: q.text, keyPoints: q.answer, student: user}] }
+        const resp = await fetch('/api/ai/explain', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ items: shortQs.map(s=>({question:s.q.text, reference:s.q.answer, student:s.user})) })
+        });
+        aiFeedback = await resp.json();
+      }catch(err){
+        aiFeedback = { error: 'Không thể kết nối AI — kiểm tra backend' };
+      }
+      setAiBusy(false);
+    }
+
+    setResults({ score, total, shortCount: shortQs.length, aiFeedback });
+    setStage('review');
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <header className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Luyện thi Vật Lí THPT — AI hỗ trợ</h1>
+            <div className="text-sm text-gray-600">Lớp: <Badge>{grade}</Badge> • Kho đề: Bộ GD & Trường (demo)</div>
+          </div>
+          <div className="flex gap-3">
+            <select value={grade} onChange={e=>setGrade(Number(e.target.value))} className="p-2 border rounded">
+              <option value={10}>Lớp 10</option>
+              <option value={11}>Lớp 11</option>
+              <option value={12}>Lớp 12</option>
+            </select>
+            <button className="px-4 py-2 bg-slate-800 text-white rounded" onClick={()=>alert('Đăng nhập/Quản lý (chưa triển khai)')}>Đăng nhập</button>
+          </div>
+        </header>
+
+        <main className="grid grid-cols-3 gap-6">
+          <aside className="col-span-1 p-4 bg-white rounded shadow">
+            <div className="mb-4"><strong>Danh sách đề</strong></div>
+            <div className="space-y-3">
+              {exams.map(ex=> (
+                <div key={ex.id} className={`p-3 rounded border ${ex.id===selectedExamId? 'ring-2 ring-slate-300':''}`}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium">{ex.title}</div>
+                      <div className="text-xs text-gray-500">{ex.source} • Lớp {ex.grade}</div>
+                    </div>
+                    <div className="text-sm">{ex.questions.length} câu</div>
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <button className="px-3 py-1 border rounded text-sm" onClick={()=>setSelectedExamId(ex.id)}>Mở</button>
+                    <button className="px-3 py-1 bg-emerald-600 text-white rounded text-sm" onClick={()=>{setSelectedExamId(ex.id); startExam();}}>Thi thử</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 text-xs text-gray-600">
+              <strong>Gợi ý triển khai:</strong>
+              <ul className="list-disc pl-5 mt-2">
+                <li>Tạo API /admin/upload để nhập đề (file JSON/PDF + metadata).</li>
+                <li>Lưu trữ bản gốc (PDF) và parsed JSON để hiển thị/điểm tự động.</li>
+                <li>Với đề có bản quyền, dùng chế độ "Chỉ xem" hoặc kết nối với nhà xuất bản.</li>
+              </ul>
+            </div>
+          </aside>
+
+          <section className="col-span-2">
+            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1,y:0}} className="bg-white p-6 rounded shadow">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold">{selectedExam.title}</h2>
+                  <div className="text-sm text-gray-500">Nguồn: {selectedExam.source} • Lớp {selectedExam.grade}</div>
+                </div>
+                <div className="text-right">
+                  <div className="mb-2">Trạng thái: <strong>{stage}</strong></div>
+                  {stage === 'browse' && <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={startExam}>Bắt đầu thi</button>}
+                  {stage === 'taking' && <button className="px-4 py-2 bg-rose-600 text-white rounded" onClick={submitExam}>Nộp bài</button>}
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                {stage === 'browse' && <div className="text-sm text-gray-600">Xem trước đề. Nhấn "Bắt đầu thi" để chuyển sang chế độ làm bài.</div>}
+
+                {(stage === 'taking' || stage === 'review') && (
+                  <div className="space-y-4">
+                    {selectedExam.questions.map((q, idx)=> (
+                      <div key={q.id}>
+                        <div className="mb-2 text-sm text-gray-500">Câu {idx+1} — {q.type.toUpperCase()}</div>
+                        {q.type === 'mcq' && <QuestionMCQ q={q} value={answers[q.id]} onChange={(v)=>setAnswer(q.id, v)} />}
+                        {q.type === 'tf' && <QuestionTF q={q} value={answers[q.id]} onChange={(v)=>setAnswer(q.id, v)} />}
+                        {q.type === 'short' && <QuestionShort q={q} value={answers[q.id]} onChange={(v)=>setAnswer(q.id, v)} />}
+
+                        {stage === 'review' && (
+                          <div className="mt-2 text-sm text-gray-700 p-3 bg-slate-50 rounded">
+                            <div><strong>Đáp án mẫu:</strong> {q.answer?.toString?.()}</div>
+                            <div className="mt-1"><strong>Gợi ý giải thích:</strong> {q.explanation || '—'}</div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {stage === 'review' && results && (
+                  <div className="mt-4 p-4 bg-emerald-50 rounded">
+                    <div className="font-medium">Kết quả tự động: {results.score}/{results.total} (MCQ & TF)</div>
+                    <div className="text-sm text-gray-600">Số câu tự chấm ngắn: {results.shortCount}</div>
+                    <div className="mt-3">
+                      <strong>Phản hồi AI:</strong>
+                      <div className="mt-2">
+                        {aiBusy && <div>Đang yêu cầu AI...</div>}
+                        {!aiBusy && results.aiFeedback && (<pre className="whitespace-pre-wrap text-sm bg-white p-3 rounded border">{JSON.stringify(results.aiFeedback, null, 2)}</pre>)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </motion.div>
+
+            <div className="mt-6 p-4 bg-white rounded shadow text-sm">
+              <h3 className="font-semibold mb-2">Tích hợp AI (kiến trúc - gợi ý)</h3>
+              <ol className="list-decimal pl-5">
+                <li>Backend gọi LLM (OpenAI / local LLM) để chấm và giải thích đáp án ngắn; lưu log để review.</li>
+                <li>Thiết kế prompt cụ thể: cung cấp đáp án mẫu, tiêu chí chấm, và câu trả lời học sinh.</li>
+                <li>Giới hạn token & rate-limit; cache kết quả cho cùng câu hỏi/đáp án để tiết kiệm chi phí.</li>
+              </ol>
+            </div>
+
+          </section>
+        </main>
+
+        <footer className="mt-8 text-xs text-gray-500">Prototype — để triển khai thật cần backend, DB, hệ thống quản lý bản quyền đề thi và kiểm thử an ninh.</footer>
+      </div>
+    </div>
+  )
+}
